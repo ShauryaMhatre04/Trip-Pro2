@@ -45,11 +45,16 @@ export default function SignupPage() {
 
     // Fire the Resend welcome email (best-effort; don't block signup on it).
     try {
-      await fetch('/api/email/welcome', {
+      const welcomeResponse = await fetch('/api/email/welcome', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, fullName }),
       });
+
+      if (!welcomeResponse.ok) {
+        const result = await welcomeResponse.json().catch(() => null);
+        console.error('Welcome email failed:', result?.error || welcomeResponse.statusText);
+      }
     } catch {
       // Non-fatal — the account was still created.
     }
