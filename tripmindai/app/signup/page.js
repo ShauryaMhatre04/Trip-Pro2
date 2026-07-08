@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Compass, ArrowRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { getSupabaseAuthErrorMessage } from '@/lib/supabase/errors';
 import { Button } from '@/components/ui/button';
 import { Input, Label } from '@/components/ui/input';
 
@@ -21,18 +22,24 @@ export default function SignupPage() {
     setLoading(true);
 
     const supabase = createClient();
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+    let error = null;
+
+    try {
+      ({ error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: fullName },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      }));
+    } catch (authError) {
+      error = authError;
+    }
 
     if (error) {
       setLoading(false);
-      setError(error.message);
+      setError(getSupabaseAuthErrorMessage(error));
       return;
     }
 

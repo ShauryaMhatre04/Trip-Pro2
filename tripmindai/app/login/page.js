@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Compass, ArrowRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { getSupabaseAuthErrorMessage } from '@/lib/supabase/errors';
 import { Button } from '@/components/ui/button';
 import { Input, Label } from '@/components/ui/input';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
@@ -22,12 +23,18 @@ export default function LoginPage() {
     setLoading(true);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    let error = null;
+
+    try {
+      ({ error } = await supabase.auth.signInWithPassword({ email, password }));
+    } catch (authError) {
+      error = authError;
+    }
 
     setLoading(false);
 
     if (error) {
-      setError(error.message);
+      setError(getSupabaseAuthErrorMessage(error));
       return;
     }
 
@@ -90,5 +97,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }
